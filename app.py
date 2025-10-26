@@ -1,12 +1,15 @@
 from flask import Flask, request, jsonify
 from bs4 import BeautifulSoup
 import requests
-from urllib.parse import urlparse, parse_qs
 import re
 
 app = Flask(__name__)
 
-BASE_URL = "https://calltracer.in"
+# ✅ Hidden real source internally
+REAL_SOURCE = "https://calltracer.in"
+# ✅ Public branding
+PUBLIC_SOURCE = "@NGYT777GG"
+
 HEADERS = {
     "Host": "calltracer.in",
     "User-Agent": "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0",
@@ -18,7 +21,7 @@ HEADERS = {
 
 def fetch_page(number: str):
     payload = {"country": "IN", "q": number}
-    resp = requests.post(BASE_URL, headers=HEADERS, data=payload, timeout=25)
+    resp = requests.post(REAL_SOURCE, headers=HEADERS, data=payload, timeout=25)
     resp.raise_for_status()
     return resp.text
 
@@ -64,7 +67,6 @@ def extract_map_iframe(soup: BeautifulSoup):
 def extract_lat_lng(iframe_src: str):
     if not iframe_src:
         return None
-    # try to find lat/lng pattern
     match = re.search(r"([0-9]+\.[0-9]+)[, ]+([0-9]+\.[0-9]+)", iframe_src)
     if match:
         return {"lat": float(match.group(1)), "lng": float(match.group(2))}
@@ -81,7 +83,7 @@ def index():
     if not number:
         return jsonify({
             "success": False,
-            "error": "Missing 'number' parameter made by @NGYT777GG (use ?number=... or POST JSON)"
+            "error": "Missing 'number' parameter (use ?number=... or POST JSON)"
         }), 400
 
     include_raw = (request.args.get("raw") == "1")
@@ -99,10 +101,11 @@ def index():
     iframe_src = extract_map_iframe(soup)
     coords = extract_lat_lng(iframe_src)
 
+    # ✅ Return masked source
     response = {
         "success": True,
         "phone_number": number,
-        "source": BASE_URL,
+        "source": PUBLIC_SOURCE,
         "fields": fields,
         "iframe_src": iframe_src,
         "map": coords
